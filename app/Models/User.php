@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -21,6 +20,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',         // 🔹 role column add kiya
+        'location_id',  // 🔹 location relation ke liye
     ];
 
     /**
@@ -34,7 +35,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
      * @return array<string, string>
      */
@@ -44,5 +45,41 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // 🔹 Required by JWT
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    // 🔹 Required by JWT
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relations
+    |--------------------------------------------------------------------------
+    */
+
+    // 🔹 User belongs to one location (clinic)
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    // 🔹 User can be staff (1-to-1 relation with staff table)
+    public function staff()
+    {
+        return $this->hasOne(Staff::class);
+    }
+
+    // 🔹 If user is client (1-to-1 relation with clients table)
+    public function client()
+    {
+        return $this->hasOne(Client::class);
     }
 }
