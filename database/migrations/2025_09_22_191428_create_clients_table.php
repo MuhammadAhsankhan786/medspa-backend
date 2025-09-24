@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-              $table->foreignId('location_id')->constrained()->onDelete('cascade'); // 🔹 ye line add karo
+            $table->foreignId('location_id')->constrained()->onDelete('cascade'); // 🔹 ye line add karo
             $table->date('date_of_birth')->nullable();
             $table->string('phone')->nullable();
             $table->json('medical_history')->nullable();

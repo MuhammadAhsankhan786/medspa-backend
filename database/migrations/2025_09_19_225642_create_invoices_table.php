@@ -10,9 +10,15 @@ return new class extends Migration
     {
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->constrained('patients')->onDelete('cascade'); 
+            $table->foreignId('patient_id')
+                  ->constrained('patients')
+                  ->onDelete('cascade'); 
+
             $table->decimal('amount', 10, 2);            
-            $table->date('invoice_date')->default(DB::raw('CURRENT_DATE'));  
+
+            // ✅ SQLite compatible: nullable + default handle in model
+            $table->date('invoice_date')->nullable();  
+
             $table->string('status')->default('unpaid'); 
             $table->timestamps();
         });

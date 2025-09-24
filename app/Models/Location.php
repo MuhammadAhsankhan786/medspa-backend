@@ -9,23 +9,23 @@ class Location extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'address'];
+    protected $fillable = [
+        'name',
+        'address',
+        'timezone',
+        'contact_phone',
+        'contact_email',
+    ];
 
-    // Ek location ke multiple staff
+    // Many-to-many: ek location me multiple staff
     public function staff()
     {
-        return $this->hasMany(Staff::class);
+        return $this->belongsToMany(Staff::class, 'location_staff');
     }
 
     // Ek location ke multiple clients
     public function clients()
     {
         return $this->hasMany(Client::class);
-    }
-
-    // Ek location ke multiple users
-    public function users()
-    {
-        return $this->hasMany(User::class);
     }
 }
