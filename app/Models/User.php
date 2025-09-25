@@ -11,34 +11,19 @@ class User extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',         // 🔹 role column add kiya
-        'location_id',  // 🔹 location relation ke liye
+        'role',
+        'location_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -53,7 +38,6 @@ class User extends Authenticatable implements JWTSubject
         return $this->getKey();
     }
 
-    // 🔹 Required by JWT
     public function getJWTCustomClaims()
     {
         return [];
@@ -65,22 +49,27 @@ class User extends Authenticatable implements JWTSubject
     |--------------------------------------------------------------------------
     */
 
-    // 🔹 User belongs to one location (clinic)
+    // User belongs to one location
     public function location()
     {
         return $this->belongsTo(Location::class);
     }
 
-    // 🔹 User can be staff (1-to-1 relation with staff table)
+    // User can be staff (1-to-1)
     public function staff()
     {
         return $this->hasOne(Staff::class);
     }
 
-    // 🔹 If user is client (1-to-1 relation with clients table)
+    // User can be client (1-to-1)
     public function client()
     {
         return $this->hasOne(Client::class);
-    } 
-    
+    }
+
+    // 🔹 User ke multiple roles
+    public function roles()
+    {
+        return $this->belongsToMany(\App\Models\Role::class, 'role_user');
+    }
 }
