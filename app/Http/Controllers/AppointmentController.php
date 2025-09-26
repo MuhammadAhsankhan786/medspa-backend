@@ -9,27 +9,39 @@ use App\Notifications\AppointmentCreated;
 
 class AppointmentController extends Controller
 {
-    // List all appointments (role-based)
+    // 🔹 List all appointments (role-based)
     public function index()
     {
         $user = auth()->user();
         $query = Appointment::with(['client','staff','location']);
 
-        // Client: only own appointments
         if ($user->roles->pluck('name')->contains('client')) {
             $query->where('client_id', $user->id);
-        } 
-        // Staff: only assigned appointments
-        elseif ($user->roles->pluck('name')->intersect(['provider','reception'])->isNotEmpty()) {
+        } elseif ($user->roles->pluck('name')->intersect(['provider','reception'])->isNotEmpty()) {
             $query->where('staff_id', $user->id);
         }
-        // Admin: all appointments
-        // no filter needed
+        // Admin → all appointments
 
-        return $query->get();
+        return response()->json($query->get());
     }
 
-    // Create appointment (client)
+    // 🔹 Show specific appointment (role + ownership check)
+    public function show(Appointment $appointment)
+    {
+        $user = auth()->user();
+
+        if ($user->roles->pluck('name')->contains('client') && $appointment->client_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($user->roles->pluck('name')->intersect(['provider','reception'])->isNotEmpty() && $appointment->staff_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json($appointment->load(['client','staff','location']));
+    }
+
+    // 🔹 Create appointment (client)
     public function store(Request $request)
     {
         $request->validate([
@@ -45,34 +57,25 @@ class AppointmentController extends Controller
             'location_id' => $request->location_id,
             'appointment_time' => $request->appointment_time,
             'notes' => $request->notes,
+            'status' => 'pending',
         ]);
 
-        // 🔹 Notify assigned staff
+        // 🔹 Notify assigned staff (Mail + DB + SMS)
         $staff = User::find($request->staff_id);
         if ($staff) {
-            $staff->notify(new AppointmentCreated($appointment));
+            $notification = new AppointmentCreated($appointment);
+
+            $staff->notify($notification);  // ✅ Mail + Database
+            $notification->toSms($staff);   // ✅ SMS
         }
 
-        return response()->json($appointment, 201);
+        return response()->json([
+            'message' => 'Appointment created successfully',
+            'appointment' => $appointment->load(['client','staff','location'])
+        ], 201);
     }
 
-    // Show specific appointment (role + ownership check)
-    public function show(Appointment $appointment)
-    {
-        $user = auth()->user();
-
-        if ($user->roles->pluck('name')->contains('client') && $appointment->client_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        if ($user->roles->pluck('name')->intersect(['provider','reception'])->isNotEmpty() && $appointment->staff_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        return $appointment->load(['client','staff','location']);
-    }
-
-    // Approve/Reject/Cancel appointment (staff/admin)
+    // 🔹 Update appointment status (staff/admin)
     public function updateStatus(Request $request, Appointment $appointment)
     {
         $user = auth()->user();
@@ -90,10 +93,13 @@ class AppointmentController extends Controller
 
         $appointment->update(['status' => $request->status]);
 
-        return response()->json($appointment);
+        return response()->json([
+            'message' => 'Appointment status updated',
+            'appointment' => $appointment->load(['client','staff','location'])
+        ]);
     }
 
-    // Cancel appointment (client)
+    // 🔹 Cancel appointment (client)
     public function destroy(Appointment $appointment)
     {
         $user = auth()->user();
@@ -105,5 +111,20 @@ class AppointmentController extends Controller
         $appointment->update(['status' => 'cancelled']);
         return response()->json(['message' => 'Appointment cancelled']);
     }
-}
 
+    // 🔹 Client → List only their own appointments
+    public function myAppointments()
+    {
+        $user = auth()->user();
+
+        if (!$user->roles->pluck('name')->contains('client')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $appointments = Appointment::with(['client','staff','location'])
+            ->where('client_id', $user->id)
+            ->get();
+
+        return response()->json($appointments);
+    }
+}
