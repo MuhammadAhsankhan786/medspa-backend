@@ -7,11 +7,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Twilio\Rest\Client; // ✅ Twilio import
+use Twilio\Rest\Client;
 
 class AppointmentCreated extends Notification implements ShouldQueue
 {
-    use Queueable; // ✅ Queueable trait zaroori hai
+    use Queueable;
 
     protected $appointment;
 
@@ -20,13 +20,12 @@ class AppointmentCreated extends Notification implements ShouldQueue
         $this->appointment = $appointment;
     }
 
-    // Channels: mail + database
     public function via($notifiable): array
     {
-        return ['mail', 'database'];
+        //maill add krni he ✅ Ab mail + database + sms sab chalenge
+        return [ 'database', 'sms'];
     }
 
-    // Mail message
     public function toMail($notifiable): MailMessage
     {
         $appointment = $this->appointment;
@@ -43,7 +42,6 @@ class AppointmentCreated extends Notification implements ShouldQueue
             ->line('Thank you!');
     }
 
-    // Database notification
     public function toArray($notifiable): array
     {
         $appointment = $this->appointment;
@@ -58,19 +56,28 @@ class AppointmentCreated extends Notification implements ShouldQueue
         ];
     }
 
-    // SMS notification
     public function toSms($notifiable)
     {
         $appointment = $this->appointment;
 
-        $message = "New Appointment Assigned:\nClient: " . $appointment->client->name .
-                   "\nTime: " . $appointment->appointment_time .
-                   "\nLocation: " . optional($appointment->location)->name;
+        $message = "📅 New Appointment Assigned\n"
+            . "Client: " . $appointment->client->name . "\n"
+            . "Time: " . $appointment->appointment_time . "\n"
+            . "Location: " . optional($appointment->location)->name;
 
-        $twilio = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
-        $twilio->messages->create($notifiable->phone, [
-            'from' => env('TWILIO_FROM'),
-            'body' => $message,
-        ]);
+        $twilio = new Client(
+            config('services.twilio.sid'),
+            config('services.twilio.token')
+        );
+
+        try {
+            return $twilio->messages->create($notifiable->phone, [
+                'from' => config('services.twilio.from'),
+                'body' => $message,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Twilio SMS failed: ' . $e->getMessage());
+            return null;
+        }
     }
 }

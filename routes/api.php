@@ -54,4 +54,13 @@ Route::middleware('auth:api')->group(function () {
         Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::get('appointments', [AppointmentController::class, 'myAppointments']);
     });
+        /*
+    |------------------------------------------------------------------
+    | Notifications (all roles)
+    |------------------------------------------------------------------
+    */
+    Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::get('notifications/unread', [\App\Http\Controllers\NotificationController::class, 'unread']);
+    Route::post('notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+
 });
