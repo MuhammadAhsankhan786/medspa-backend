@@ -11,15 +11,27 @@ class Client extends Model
 
     protected $fillable = ['user_id', 'location_id', 'phone'];
 
-    // Client belongs to ek user
-    public function user()
+    // Client belongs to ek User
+    public function clientUser()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Client belongs to ek location
+    // Client belongs to ek Location
     public function location()
     {
         return $this->belongsTo(Location::class);
+    }
+
+    // Client has many Appointments
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    // Client has many ConsentForms
+    public function consentForms()
+    {
+        return $this->hasMany(ConsentForm::class);
     }
 }

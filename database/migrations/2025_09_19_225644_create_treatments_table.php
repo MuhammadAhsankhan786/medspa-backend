@@ -10,12 +10,11 @@ return new class extends Migration
     {
         Schema::create('treatments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->constrained('patients')->onDelete('cascade'); 
-            $table->string('treatment_type');        
-            $table->integer('cost');                         // 💡 cost added
-            $table->string('status')->default('pending');    // 💡 status added
-            $table->text('description')->nullable(); 
-            $table->date('treatment_date')->nullable();      // optional
+            $table->foreignId('appointment_id')->constrained('appointments')->onDelete('cascade');
+            $table->foreignId('provider_id')->constrained('users')->onDelete('cascade');
+            $table->text('notes')->nullable();
+            $table->string('before_photo')->nullable();
+            $table->string('after_photo')->nullable();
             $table->timestamps();
         });
     }

@@ -21,7 +21,7 @@ class Appointment extends Model
     // Relations
     public function client()
     {
-        return $this->belongsTo(User::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function staff()
@@ -32,5 +32,15 @@ class Appointment extends Model
     public function location()
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function treatments()
+    {
+        return $this->hasMany(Treatment::class);
+    }
+
+    public function consentForms()
+    {
+        return $this->hasMany(ConsentForm::class);
     }
 }
