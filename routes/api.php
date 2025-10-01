@@ -6,6 +6,8 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ConsentFormController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PackageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +45,13 @@ Route::middleware('auth:api')->group(function () {
 
         // Treatments
         Route::apiResource('treatments', TreatmentController::class);
+
+        // Payments
+        Route::apiResource('payments', PaymentController::class);
+
+        // Packages
+        Route::apiResource('packages', PackageController::class);
+        Route::post('packages/assign', [PackageController::class, 'assignToClient']);
     });
 
     /*
@@ -61,6 +70,12 @@ Route::middleware('auth:api')->group(function () {
 
         // Treatments
         Route::apiResource('treatments', TreatmentController::class);
+
+        // Payments (read-only for staff)
+        Route::apiResource('payments', PaymentController::class)->only(['index','show']);
+
+        // Packages (read-only for staff)
+        Route::apiResource('packages', PackageController::class)->only(['index','show']);
     });
 
     /*
@@ -75,15 +90,22 @@ Route::middleware('auth:api')->group(function () {
         Route::post('appointments', [AppointmentController::class, 'store']);
         Route::delete('appointments/{appointment}', [AppointmentController::class, 'destroy']);
 
-        // Consent Forms (client apne hi create/update/delete kar sakta)
+        // Consent Forms (client can only manage own)
         Route::apiResource('consent-forms', ConsentFormController::class)->only([
             'index', 'store', 'show', 'update', 'destroy'
         ]);
 
-        // Treatments (sirf apne hi)
+        // Treatments (client can only view & create)
         Route::apiResource('treatments', TreatmentController::class)->only([
             'index', 'store', 'show'
         ]);
+
+        // Payments
+        Route::get('payments', [PaymentController::class, 'myPayments']);
+        Route::post('payments', [PaymentController::class, 'pay']);
+
+        // Packages
+        Route::get('packages', [PackageController::class, 'myPackages']);
     });
 
     /*

@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Storage;
 class TreatmentController extends Controller
 {
     /**
-     * Display a listing of the treatments.
+     * Display a listing of treatments.
      */
     public function index()
     {
         $user = auth()->user();
 
-        $query = Treatment::with(['appointment.client.user', 'appointment.staff']);
+        $query = Treatment::with(['appointment.client.clientUser', 'appointment.staff']);
 
         // Client → only their own treatments
         if ($user->role === 'client') {
@@ -24,7 +24,7 @@ class TreatmentController extends Controller
             });
         }
 
-        return response()->json($query->get());
+        return response()->json($query->get(), 200);
     }
 
     /**
@@ -35,22 +35,23 @@ class TreatmentController extends Controller
         $request->validate([
             'appointment_id' => 'required|exists:appointments,id',
             'provider_id'    => 'required|exists:users,id',
-            'treatment_type' => 'required|string',
+            'treatment_type' => 'required|string|max:255',
             'cost'           => 'required|numeric',
-            'status'         => 'required|string',
+            'status'         => 'required|string|in:pending,completed,canceled',
             'description'    => 'nullable|string',
-            'notes'          => 'nullable|string',
+            'notes'          => 'nullable|string', // SOAP notes
             'before_photo'   => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'after_photo'    => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'treatment_date' => 'required|date',
         ]);
 
+        // File uploads → S3/local storage
         $beforePhoto = $request->hasFile('before_photo')
-            ? $request->file('before_photo')->store('treatments', 'public')
+            ? $request->file('before_photo')->store('treatments/before', 'public')
             : null;
 
         $afterPhoto = $request->hasFile('after_photo')
-            ? $request->file('after_photo')->store('treatments', 'public')
+            ? $request->file('after_photo')->store('treatments/after', 'public')
             : null;
 
         $treatment = Treatment::create([
@@ -68,49 +69,56 @@ class TreatmentController extends Controller
 
         return response()->json([
             'message'   => 'Treatment created successfully',
-            'treatment' => $treatment->load(['appointment.client.user', 'appointment.staff']),
+            'treatment' => $treatment->load(['appointment.client.clientUser', 'appointment.staff'])
         ], 201);
     }
 
     /**
      * Display the specified treatment.
      */
-    public function show(string $id)
+    public function show($id)
     {
-        $treatment = Treatment::with(['appointment.client.user', 'appointment.staff'])->findOrFail($id);
+        $treatment = Treatment::with(['appointment.client.clientUser', 'appointment.staff'])->findOrFail($id);
         $user = auth()->user();
 
+        // Client can only see their own treatments
         if ($user->role === 'client' && $treatment->appointment->client_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json($treatment);
+        return response()->json($treatment, 200);
     }
 
     /**
      * Update the specified treatment.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         $treatment = Treatment::findOrFail($id);
+        $user = auth()->user();
+
+        // Client can only update their own treatments
+        if ($user->role === 'client' && $treatment->appointment->client_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $request->validate([
-            'treatment_type' => 'nullable|string',
+            'treatment_type' => 'nullable|string|max:255',
             'cost'           => 'nullable|numeric',
-            'status'         => 'nullable|string',
+            'status'         => 'nullable|string|in:pending,completed,canceled',
             'description'    => 'nullable|string',
-            'notes'          => 'nullable|string',
+            'notes'          => 'nullable|string', // SOAP notes
             'before_photo'   => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'after_photo'    => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'treatment_date' => 'nullable|date',
         ]);
 
         if ($request->hasFile('before_photo')) {
-            $treatment->before_photo = $request->file('before_photo')->store('treatments', 'public');
+            $treatment->before_photo = $request->file('before_photo')->store('treatments/before', 'public');
         }
 
         if ($request->hasFile('after_photo')) {
-            $treatment->after_photo = $request->file('after_photo')->store('treatments', 'public');
+            $treatment->after_photo = $request->file('after_photo')->store('treatments/after', 'public');
         }
 
         $treatment->update($request->only([
@@ -119,18 +127,25 @@ class TreatmentController extends Controller
 
         return response()->json([
             'message'   => 'Treatment updated successfully',
-            'treatment' => $treatment->load(['appointment.client.user', 'appointment.staff']),
-        ]);
+            'treatment' => $treatment->load(['appointment.client.clientUser', 'appointment.staff'])
+        ], 200);
     }
 
     /**
      * Remove the specified treatment.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
         $treatment = Treatment::findOrFail($id);
+        $user = auth()->user();
+
+        // Client can only delete their own treatments
+        if ($user->role === 'client' && $treatment->appointment->client_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $treatment->delete();
 
-        return response()->json(['message' => 'Treatment deleted successfully']);
+        return response()->json(['message' => 'Treatment deleted successfully'], 200);
     }
 }
