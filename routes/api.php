@@ -35,21 +35,14 @@ Route::middleware('auth:api')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:admin')->prefix('admin')->group(function () {
-        // Appointments
         Route::get('appointments', [AppointmentController::class, 'index']);
         Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
 
-        // Consent Forms
         Route::apiResource('consent-forms', ConsentFormController::class);
-
-        // Treatments
         Route::apiResource('treatments', TreatmentController::class);
-
-        // Payments
         Route::apiResource('payments', PaymentController::class);
-
-        // Packages
+        Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
         Route::apiResource('packages', PackageController::class);
         Route::post('packages/assign', [PackageController::class, 'assignToClient']);
     });
@@ -60,21 +53,15 @@ Route::middleware('auth:api')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:provider,reception')->prefix('staff')->group(function () {
-        // Appointments
         Route::get('appointments', [AppointmentController::class, 'index']);
         Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
 
-        // Consent Forms
         Route::apiResource('consent-forms', ConsentFormController::class);
-
-        // Treatments
         Route::apiResource('treatments', TreatmentController::class);
 
-        // Payments (read-only for staff)
         Route::apiResource('payments', PaymentController::class)->only(['index','show']);
-
-        // Packages (read-only for staff)
+        Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
         Route::apiResource('packages', PackageController::class)->only(['index','show']);
     });
 
@@ -84,27 +71,24 @@ Route::middleware('auth:api')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:client')->prefix('client')->group(function () {
-        // Appointments
         Route::get('appointments', [AppointmentController::class, 'myAppointments']);
         Route::get('appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::post('appointments', [AppointmentController::class, 'store']);
         Route::delete('appointments/{appointment}', [AppointmentController::class, 'destroy']);
 
-        // Consent Forms (client can only manage own)
         Route::apiResource('consent-forms', ConsentFormController::class)->only([
             'index', 'store', 'show', 'update', 'destroy'
         ]);
 
-        // Treatments (client can only view & create)
         Route::apiResource('treatments', TreatmentController::class)->only([
             'index', 'store', 'show'
         ]);
 
-        // Payments
+        // ✅ Payments: create + view own + confirm Stripe
         Route::get('payments', [PaymentController::class, 'myPayments']);
-        Route::post('payments', [PaymentController::class, 'pay']);
+        Route::post('payments', [PaymentController::class, 'store']);
+        Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
 
-        // Packages
         Route::get('packages', [PackageController::class, 'myPackages']);
     });
 

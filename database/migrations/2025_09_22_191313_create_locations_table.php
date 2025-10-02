@@ -10,11 +10,12 @@ return new class extends Migration
     {
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Clinic ya Medspa ka naam
+            $table->string('name'); // Clinic / Medspa ka naam
             $table->string('address')->nullable();
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->string('zip')->nullable();
+            $table->string('timezone')->default('UTC');
             $table->timestamps();
         });
     }

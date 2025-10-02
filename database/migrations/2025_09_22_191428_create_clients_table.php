@@ -9,15 +9,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('clients', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->foreignId('location_id')->constrained()->onDelete('cascade'); // 🔹 ye line add karo
-            $table->date('date_of_birth')->nullable();
-            $table->string('phone')->nullable();
-            $table->json('medical_history')->nullable();
-            $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->id();
+$table->unsignedBigInteger('user_id');
+$table->foreignId('location_id')->constrained()->onDelete('cascade');
+$table->string('name');   // 🔹 add this
+$table->string('email');  // 🔹 add this
+$table->date('date_of_birth')->nullable();
+$table->string('phone')->nullable();
+$table->json('medical_history')->nullable();
+$table->timestamps();
+
+$table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
         });
     }
 

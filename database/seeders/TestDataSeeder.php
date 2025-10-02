@@ -27,7 +27,12 @@ class TestDataSeeder extends Seeder
 
         $client = Client::firstOrCreate(
             ['user_id' => $clientUser->id],
-            ['phone' => '+1234567890']
+            [
+                'phone' => '+1234567890',
+                'name' => $clientUser->name,    // Add required name field
+                'email' => $clientUser->email,  // Add required email field
+                'location_id' => 1              // Add required location_id
+            ]
         );
 
         // 2️⃣ Appointment

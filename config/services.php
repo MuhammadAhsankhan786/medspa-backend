@@ -39,5 +39,9 @@ return [
     'token' => env('TWILIO_AUTH_TOKEN'),
     'from' => env('TWILIO_FROM'),
 ],
+'stripe' => [
+    'key' => env('STRIPE_KEY'),
+    'secret' => env('STRIPE_SECRET'),
+],
 
 ];

@@ -9,7 +9,14 @@ class Client extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'location_id', 'phone'];
+    // Add name and email to fillable
+    protected $fillable = [
+        'user_id',
+        'name',
+        'email',
+        'location_id',
+        'phone'
+    ];
 
     // Client belongs to ek User
     public function clientUser()

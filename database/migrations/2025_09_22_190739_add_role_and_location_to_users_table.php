@@ -9,10 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('client')->after('password');
+            // ❌ role already exists in users table migration
             $table->unsignedBigInteger('location_id')->nullable()->after('role');
 
-            $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null');
+            $table->foreign('location_id')
+                  ->references('id')
+                  ->on('locations')
+                  ->onDelete('set null');
         });
     }
 
@@ -20,7 +23,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['location_id']);
-            $table->dropColumn(['role', 'location_id']);
+            $table->dropColumn('location_id');
         });
     }
 };

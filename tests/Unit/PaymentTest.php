@@ -5,7 +5,6 @@ namespace Tests\Unit;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Client;
-use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class PaymentTest extends TestCase
@@ -14,7 +13,7 @@ class PaymentTest extends TestCase
 
     public function test_admin_can_create_payment()
     {
-        $adminUser = User::factory()->create(['role' => 'admin']);
+        $adminUser = User::factory()->admin()->create(); // ✅ factory role use
         $client = Client::factory()->create();
 
         $response = $this->actingAs($adminUser, 'api')->postJson('/api/admin/payments', [
