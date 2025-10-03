@@ -8,6 +8,7 @@ use App\Models\Client;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use PDF; // barryvdh/laravel-dompdf
 
 class PaymentController extends Controller
 {
@@ -16,6 +17,7 @@ class PaymentController extends Controller
         Stripe::setApiKey(env('STRIPE_SECRET'));
     }
 
+    // List all payments (Admin/Provider)
     public function index()
     {
         try {
@@ -33,6 +35,7 @@ class PaymentController extends Controller
         }
     }
 
+    // Client → view own payments
     public function myPayments()
     {
         try {
@@ -47,6 +50,7 @@ class PaymentController extends Controller
         }
     }
 
+    // Store a new payment (cash or Stripe)
     public function store(Request $request)
     {
         try {
@@ -57,16 +61,19 @@ class PaymentController extends Controller
                 'amount'         => 'required|numeric|min:1',
                 'payment_method' => 'required|in:stripe,cash',
                 'tips'           => 'nullable|numeric',
-                'commission'     => 'nullable|numeric',
                 'status'         => 'required|in:pending,completed,canceled',
             ]);
 
             $client = Client::find($request->client_id);
             if (!$client) return response()->json(['message'=>'Client not found','error'=>'Invalid client_id'],404);
 
-            if ($request->payment_method === 'stripe') {
-                Stripe::setApiKey(env('STRIPE_SECRET'));
+            // 🔹 Fixed Commission % Rule
+            $commissionRate = config('medspa.commission_rate', 20); // default 20%
+            $commission = ($request->amount * $commissionRate) / 100;
 
+            if ($request->payment_method === 'stripe') {
+                // Stripe payment
+                Stripe::setApiKey(env('STRIPE_SECRET'));
                 $paymentIntent = PaymentIntent::create([
                     'amount' => $request->amount * 100,
                     'currency' => 'usd',
@@ -81,7 +88,7 @@ class PaymentController extends Controller
                     'payment_method' => 'stripe',
                     'status'         => 'pending',
                     'tips'           => $request->tips ?? 0,
-                    'commission'     => $request->commission ?? 0,
+                    'commission'     => $commission,
                 ]);
 
                 AuditLog::create([
@@ -99,6 +106,7 @@ class PaymentController extends Controller
                 ], 201);
 
             } else {
+                // Cash payment
                 $payment = Payment::create([
                     'client_id'      => $client->id,
                     'appointment_id' => $request->appointment_id,
@@ -107,7 +115,7 @@ class PaymentController extends Controller
                     'payment_method' => 'cash',
                     'status'         => 'completed',
                     'tips'           => $request->tips ?? 0,
-                    'commission'     => $request->commission ?? 0,
+                    'commission'     => $commission,
                 ]);
 
                 AuditLog::create([
@@ -125,11 +133,11 @@ class PaymentController extends Controller
             }
 
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to create payment','error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Failed to create payment','error'=>$e->getMessage()],500);
         }
     }
 
-    // 🔹 New method: Confirm Stripe payment
+    // Confirm Stripe payment
     public function confirmStripePayment(Request $request, $paymentId)
     {
         try {
@@ -154,7 +162,10 @@ class PaymentController extends Controller
                     'new_data'=>json_encode($payment),
                 ]);
 
-                return response()->json(['message'=>'Payment completed successfully','payment'=>$payment->load(['client.clientUser','appointment','package'])],200);
+                return response()->json([
+                    'message'=>'Payment completed successfully',
+                    'payment'=>$payment->load(['client.clientUser','appointment','package'])
+                ],200);
             } else {
                 return response()->json(['message'=>'Payment not completed','status'=>$paymentIntent->status],400);
             }
@@ -163,5 +174,24 @@ class PaymentController extends Controller
         }
     }
 
-    // 🔹 (Other methods: show, update, destroy remain unchanged)
+    // Generate Payment Receipt PDF
+    public function generateReceipt($paymentId)
+    {
+        $payment = Payment::with(['client.clientUser', 'appointment', 'package'])->find($paymentId);
+
+        if (!$payment) {
+            return response()->json(['message'=>'Payment not found'],404);
+        }
+
+        $pdf = PDF::loadView('payments.receipt', compact('payment'));
+
+        // Save PDF locally (optional)
+        $filename = 'payment_receipt_'.$payment->id.'.pdf';
+        $path = storage_path('app/public/receipts/'.$filename);
+        $pdf->save($path);
+
+        return $pdf->download($filename); // Direct download
+    }
+
+    // 🔹 Other methods: show, update, destroy remain unchanged
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +44,9 @@ Route::middleware('auth:api')->group(function () {
         Route::apiResource('treatments', TreatmentController::class);
         Route::apiResource('payments', PaymentController::class);
         Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
+        // ✅ Receipt route
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'generateReceipt']);
+
         Route::apiResource('packages', PackageController::class);
         Route::post('packages/assign', [PackageController::class, 'assignToClient']);
     });
@@ -62,7 +66,12 @@ Route::middleware('auth:api')->group(function () {
 
         Route::apiResource('payments', PaymentController::class)->only(['index','show']);
         Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
+        // ✅ Receipt route
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'generateReceipt']);
+
         Route::apiResource('packages', PackageController::class)->only(['index','show']);
+        Route::apiResource('products', ProductController::class);
+
     });
 
     /*
@@ -88,6 +97,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('payments', [PaymentController::class, 'myPayments']);
         Route::post('payments', [PaymentController::class, 'store']);
         Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
+        // ✅ Receipt route
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'generateReceipt']);
 
         Route::get('packages', [PackageController::class, 'myPackages']);
     });
