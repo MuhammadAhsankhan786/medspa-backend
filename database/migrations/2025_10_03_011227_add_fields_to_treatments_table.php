@@ -9,18 +9,39 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('treatments', function (Blueprint $table) {
-            $table->string('treatment_type')->after('provider_id');
-            $table->decimal('cost', 8, 2)->after('treatment_type');
-            $table->string('status')->after('cost');
-            $table->text('description')->nullable()->after('status');
-            $table->dateTime('treatment_date')->after('description');
+
+            // Status column add only if it doesn't exist
+            if (!Schema::hasColumn('treatments', 'status')) {
+                $table->string('status')->after('cost');
+            }
+
+            // Description column add only if it doesn't exist
+            if (!Schema::hasColumn('treatments', 'description')) {
+                $table->text('description')->nullable()->after('status');
+            }
+
+            // Treatment date column add only if it doesn't exist
+            if (!Schema::hasColumn('treatments', 'treatment_date')) {
+                $table->dateTime('treatment_date')->after('description');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('treatments', function (Blueprint $table) {
-            $table->dropColumn(['treatment_type', 'cost', 'status', 'description', 'treatment_date']);
+
+            if (Schema::hasColumn('treatments', 'status')) {
+                $table->dropColumn('status');
+            }
+
+            if (Schema::hasColumn('treatments', 'description')) {
+                $table->dropColumn('description');
+            }
+
+            if (Schema::hasColumn('treatments', 'treatment_date')) {
+                $table->dropColumn('treatment_date');
+            }
         });
     }
 };

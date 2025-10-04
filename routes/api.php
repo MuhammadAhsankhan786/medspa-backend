@@ -9,6 +9,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\StockNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,13 +44,19 @@ Route::middleware('auth:api')->group(function () {
 
         Route::apiResource('consent-forms', ConsentFormController::class);
         Route::apiResource('treatments', TreatmentController::class);
+
         Route::apiResource('payments', PaymentController::class);
         Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
-        // ✅ Receipt route
         Route::get('payments/{payment}/receipt', [PaymentController::class, 'generateReceipt']);
 
         Route::apiResource('packages', PackageController::class);
         Route::post('packages/assign', [PackageController::class, 'assignToClient']);
+
+        // ✅ Inventory: Admin full control
+        Route::apiResource('products', ProductController::class);
+        Route::post('products/{product}/adjust', [StockAdjustmentController::class, 'store']);
+        Route::get('stock-notifications', [StockNotificationController::class, 'index']);
+        Route::post('stock-notifications/{notification}/read', [StockNotificationController::class, 'markAsRead']);
     });
 
     /*
@@ -66,12 +74,15 @@ Route::middleware('auth:api')->group(function () {
 
         Route::apiResource('payments', PaymentController::class)->only(['index','show']);
         Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
-        // ✅ Receipt route
         Route::get('payments/{payment}/receipt', [PaymentController::class, 'generateReceipt']);
 
         Route::apiResource('packages', PackageController::class)->only(['index','show']);
-        Route::apiResource('products', ProductController::class);
 
+        // ✅ Inventory: Staff allowed
+        Route::apiResource('products', ProductController::class);
+        Route::post('products/{product}/adjust', [StockAdjustmentController::class, 'store']);
+        Route::get('stock-notifications', [StockNotificationController::class, 'index']);
+        Route::post('stock-notifications/{notification}/read', [StockNotificationController::class, 'markAsRead']);
     });
 
     /*
@@ -97,7 +108,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('payments', [PaymentController::class, 'myPayments']);
         Route::post('payments', [PaymentController::class, 'store']);
         Route::post('payments/{payment}/confirm-stripe', [PaymentController::class, 'confirmStripePayment']);
-        // ✅ Receipt route
         Route::get('payments/{payment}/receipt', [PaymentController::class, 'generateReceipt']);
 
         Route::get('packages', [PackageController::class, 'myPackages']);
