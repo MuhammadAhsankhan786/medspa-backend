@@ -9,6 +9,8 @@ use App\Models\Treatment;
 use App\Observers\TreatmentObserver;
 use App\Models\StockAdjustment;
 use App\Observers\StockAdjustmentObserver;
+use App\Models\Product;
+use App\Observers\ProductObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Observers
         Treatment::observe(TreatmentObserver::class);
-        StockAdjustment::observe(StockAdjustmentObserver::class); // 👈 add this line
+        StockAdjustment::observe(StockAdjustmentObserver::class);
+        Product::observe(ProductObserver::class);
     }
 }

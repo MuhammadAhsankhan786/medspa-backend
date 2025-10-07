@@ -12,6 +12,9 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockNotificationController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\LocationController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -57,6 +60,14 @@ Route::middleware('auth:api')->group(function () {
         Route::post('products/{product}/adjust', [StockAdjustmentController::class, 'store']);
         Route::get('stock-notifications', [StockNotificationController::class, 'index']);
         Route::post('stock-notifications/{notification}/read', [StockNotificationController::class, 'markAsRead']);
+
+        // Reports & Analytics
+        Route::get('reports/revenue', [ReportsController::class, 'revenue']);
+        Route::get('reports/client-retention', [ReportsController::class, 'clientRetention']);
+        Route::get('reports/staff-performance', [ReportsController::class, 'staffPerformance']);
+
+        // Locations Management
+        Route::apiResource('locations', LocationController::class);
     });
 
     /*
@@ -121,5 +132,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/unread', [NotificationController::class, 'unread']);
     Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    
+    // Secure file access
+    Route::get('files/consent-forms/{id}/{filename}', [FileController::class, 'consentForm']);
+    Route::get('files/treatments/{id}/{type}', [FileController::class, 'treatmentPhoto']);
+    Route::post('files/signed-url', [FileController::class, 'signedUrl']);
+    
     Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
 });

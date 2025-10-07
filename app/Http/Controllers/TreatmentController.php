@@ -45,13 +45,13 @@ class TreatmentController extends Controller
             'treatment_date' => 'required|date',
         ]);
 
-        // File uploads → S3/local storage
+        // File uploads → Secure private storage
         $beforePhoto = $request->hasFile('before_photo')
-            ? $request->file('before_photo')->store('treatments/before', 'public')
+            ? $request->file('before_photo')->store('treatments/before', 'local')
             : null;
 
         $afterPhoto = $request->hasFile('after_photo')
-            ? $request->file('after_photo')->store('treatments/after', 'public')
+            ? $request->file('after_photo')->store('treatments/after', 'local')
             : null;
 
         $treatment = Treatment::create([
@@ -114,11 +114,11 @@ class TreatmentController extends Controller
         ]);
 
         if ($request->hasFile('before_photo')) {
-            $treatment->before_photo = $request->file('before_photo')->store('treatments/before', 'public');
+            $treatment->before_photo = $request->file('before_photo')->store('treatments/before', 'local');
         }
 
         if ($request->hasFile('after_photo')) {
-            $treatment->after_photo = $request->file('after_photo')->store('treatments/after', 'public');
+            $treatment->after_photo = $request->file('after_photo')->store('treatments/after', 'local');
         }
 
         $treatment->update($request->only([

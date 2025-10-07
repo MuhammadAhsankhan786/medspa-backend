@@ -7,10 +7,27 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // List all products
-    public function index()
+    // List all products with location filtering
+    public function index(Request $request)
     {
-        return Product::all();
+        $query = Product::with('location');
+
+        // Filter by location if specified
+        if ($request->has('location_id')) {
+            $query->where('location_id', $request->location_id);
+        }
+
+        // Filter by category if specified
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
+        }
+
+        // Filter low stock items
+        if ($request->has('low_stock') && $request->low_stock) {
+            $query->whereRaw('current_stock <= low_stock_threshold');
+        }
+
+        return response()->json($query->get());
     }
 
     // Add new product
@@ -18,11 +35,17 @@ class ProductController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'SKU' => 'required|string|unique:products',
-            'description' => 'nullable|string',
+            'sku' => 'required|string|unique:products',
+            'category' => 'nullable|string|max:255',
             'price' => 'required|numeric',
-            'stock' => 'required|integer',
-            'location_id' => 'nullable|exists:locations,id',
+            'current_stock' => 'required|integer|min:0',
+            'minimum_stock' => 'required|integer|min:0',
+            'low_stock_threshold' => 'required|integer|min:0',
+            'unit' => 'nullable|string|max:50',
+            'expiry_date' => 'nullable|date|after:today',
+            'lot_number' => 'nullable|string|max:255',
+            'location_id' => 'required|exists:locations,id',
+            'active' => 'boolean',
         ]);
 
         $product = Product::create($data);
@@ -32,7 +55,7 @@ class ProductController extends Controller
     // Show single product
     public function show(Product $product)
     {
-        return $product;
+        return response()->json($product->load('location'));
     }
 
     // Update product
@@ -40,11 +63,17 @@ class ProductController extends Controller
     {
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'SKU' => 'sometimes|string|unique:products,SKU,' . $product->id,
-            'description' => 'nullable|string',
+            'sku' => 'sometimes|string|unique:products,sku,' . $product->id,
+            'category' => 'nullable|string|max:255',
             'price' => 'sometimes|numeric',
-            'stock' => 'sometimes|integer',
-            'location_id' => 'nullable|exists:locations,id',
+            'current_stock' => 'sometimes|integer|min:0',
+            'minimum_stock' => 'sometimes|integer|min:0',
+            'low_stock_threshold' => 'sometimes|integer|min:0',
+            'unit' => 'nullable|string|max:50',
+            'expiry_date' => 'nullable|date',
+            'lot_number' => 'nullable|string|max:255',
+            'location_id' => 'sometimes|exists:locations,id',
+            'active' => 'boolean',
         ]);
 
         $product->update($data);

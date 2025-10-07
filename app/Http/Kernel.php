@@ -11,6 +11,8 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\ForceHttps::class,
+        \App\Http\Middleware\SecurityHeaders::class,
     ];
 
     protected $middlewareGroups = [
@@ -24,7 +26,6 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -38,5 +39,8 @@ class Kernel extends HttpKernel
 
         // 🔹 Role-based middleware
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        
+        // Security middleware
+        'sensitive.timeout' => \App\Http\Middleware\SensitiveActionTimeout::class,
     ];
 }

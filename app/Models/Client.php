@@ -41,4 +41,11 @@ class Client extends Model
     {
         return $this->hasMany(ConsentForm::class);
     }
+
+    protected function casts(): array
+    {
+        return [
+            'medical_history' => \App\Casts\EncryptedJson::class,
+        ];
+    }
 }

@@ -13,7 +13,11 @@ class Appointment extends Model
         'client_id',
         'staff_id',
         'location_id',
-        'appointment_time',
+        'start_time',
+        'end_time',
+        'service_id',
+        'provider_id',
+        'package_id',
         'status',
         'notes',
     ];
@@ -27,6 +31,21 @@ class Appointment extends Model
     public function staff()
     {
         return $this->belongsTo(User::class, 'staff_id');
+    }
+
+    public function provider()
+    {
+        return $this->belongsTo(User::class, 'provider_id');
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
     }
 
     public function location()

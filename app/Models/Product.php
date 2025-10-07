@@ -9,7 +9,8 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'sku', 'price', 'current_stock', 'minimum_stock', 'unit', 'active'
+        'name', 'sku', 'price', 'current_stock', 'minimum_stock', 'unit', 'active',
+        'category', 'expiry_date', 'lot_number', 'low_stock_threshold', 'location_id'
     ];
 
     public function stockAdjustments()
@@ -20,5 +21,10 @@ class Product extends Model
     public function stockNotifications()
     {
         return $this->hasMany(StockNotification::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 }

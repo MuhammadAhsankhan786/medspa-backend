@@ -13,10 +13,15 @@ class ConsentFormController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = ConsentForm::with(['client.user', 'service']);
+        $query = ConsentForm::with(['client.clientUser', 'service']);
 
         if ($user->role === 'client') {
-            $query->where('client_id', $user->id);
+            $client = \App\Models\Client::where('user_id', $user->id)->first();
+            if ($client) {
+                $query->where('client_id', $client->id);
+            } else {
+                return response()->json(['message' => 'Client profile not found'], 404);
+            }
         }
 
         return response()->json($query->get());
@@ -35,8 +40,9 @@ class ConsentFormController extends Controller
             'file'             => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
+        // Store file securely in private storage
         $fileUrl = $request->hasFile('file') 
-            ? $request->file('file')->store('consents', 'public') 
+            ? $request->file('file')->store('consents', 'local') 
             : null;
 
         $consentForm = ConsentForm::create([
@@ -50,7 +56,7 @@ class ConsentFormController extends Controller
 
         return response()->json([
             'message' => 'Consent form created successfully',
-            'consent_form' => $consentForm->load(['client.user','service'])
+            'consent_form' => $consentForm->load(['client.clientUser','service'])
         ], 201);
     }
 
@@ -59,11 +65,14 @@ class ConsentFormController extends Controller
      */
     public function show(string $id)
     {
-        $consentForm = ConsentForm::with(['client.user','service'])->findOrFail($id);
+        $consentForm = ConsentForm::with(['client.clientUser','service'])->findOrFail($id);
         $user = auth()->user();
 
-        if ($user->role === 'client' && $consentForm->client_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if ($user->role === 'client') {
+            $client = \App\Models\Client::where('user_id', $user->id)->first();
+            if (!$client || $consentForm->client_id !== $client->id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
         }
 
         return response()->json($consentForm);
@@ -83,14 +92,14 @@ class ConsentFormController extends Controller
         ]);
 
         if ($request->hasFile('file')) {
-            $consentForm->file_url = $request->file('file')->store('consents', 'public');
+            $consentForm->file_url = $request->file('file')->store('consents', 'local');
         }
 
         $consentForm->update($request->only(['form_type','digital_signature']));
 
         return response()->json([
             'message' => 'Consent form updated successfully',
-            'consent_form' => $consentForm->load(['client.user','service'])
+            'consent_form' => $consentForm->load(['client.clientUser','service'])
         ]);
     }
 
