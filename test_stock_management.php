@@ -76,3 +76,4 @@ try {
     echo "Error Code: " . $e->getCode() . "\n";
     echo "Stack trace:\n" . $e->getTraceAsString() . "\n";
 }
+

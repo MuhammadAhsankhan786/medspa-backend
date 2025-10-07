@@ -7,6 +7,8 @@ use Illuminate\Notifications\ChannelManager;
 use App\Notifications\Channels\SmsChannel;
 use App\Models\Treatment;
 use App\Observers\TreatmentObserver;
+use App\Models\StockAdjustment;
+use App\Observers\StockAdjustmentObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
             return new SmsChannel();
         });
 
-        // Register Treatment Observer
+        // Register Observers
         Treatment::observe(TreatmentObserver::class);
+        StockAdjustment::observe(StockAdjustmentObserver::class); // 👈 add this line
     }
 }
