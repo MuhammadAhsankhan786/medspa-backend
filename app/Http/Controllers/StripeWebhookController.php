@@ -3,37 +3,31 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Stripe\Stripe;
-use Stripe\Webhook;
-use Stripe\Exception\SignatureVerificationException;
+use Illuminate\Support\Facades\Log;
 
 class StripeWebhookController extends Controller
 {
-    public function handle(Request $request)
+    public function handleWebhook(Request $request)
     {
-        $payload = $request->getContent();
-        $sigHeader = $request->header('Stripe-Signature');
-        $webhookSecret = env('STRIPE_WEBHOOK_SECRET');
+        // Log full webhook event from Stripe
+        Log::info('Stripe webhook received:', $request->all());
 
-        try {
-            $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
-        } catch (SignatureVerificationException $e) {
-            return response()->json(['error' => 'Invalid signature'], 400);
-        }
+        // Optionally handle specific events
+        $eventType = $request->type ?? 'unknown';
 
-        // Event type handle karo
-        switch ($event->type) {
+        switch ($eventType) {
             case 'payment_intent.succeeded':
-                $paymentIntent = $event->data->object;
-                // Yahan appointment update aur commission calculate karo
+                Log::info('✅ Payment succeeded: ' . $request->data['object']['id']);
                 break;
 
-            case 'payment_intent.failed':
-                $paymentIntent = $event->data->object;
-                // Payment failed handle karo
+            case 'payment_intent.payment_failed':
+                Log::warning('❌ Payment failed: ' . $request->data['object']['id']);
                 break;
+
+            default:
+                Log::info('ℹ️ Event type: ' . $eventType);
         }
 
-        return response()->json(['status' => 'success']);
+        return response('Webhook received', 200);
     }
 }

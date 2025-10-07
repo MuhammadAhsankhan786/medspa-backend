@@ -11,7 +11,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockNotificationController;
-
+use App\Http\Controllers\StripeWebhookController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -121,4 +121,5 @@ Route::middleware('auth:api')->group(function () {
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/unread', [NotificationController::class, 'unread']);
     Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
 });
